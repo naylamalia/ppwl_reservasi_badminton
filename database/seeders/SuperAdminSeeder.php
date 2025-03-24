@@ -37,7 +37,7 @@ class SuperAdminSeeder extends Seeder
         // Membuat user biasa (penyewa lapangan)
         $user = User::firstOrCreate([
             'email' => 'user@roles.id',
-            'name' => 'Orang',
+            'name' => 'Miranda',
             'password' => Hash::make('123456')
         ]);
         $user->assignRole('User');
