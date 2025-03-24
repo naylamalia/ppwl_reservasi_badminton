@@ -11,7 +11,7 @@ class UpdateCourtRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class UpdateCourtRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nama' => 'required|string|max:255', // Nama lapangan wajib diisi
+            'deskripsi' => 'nullable|string', // Deskripsi opsional
+            'harga_per_jam' => 'required|numeric|min:0', // Harga per jam wajib diisi dan harus angka positif
+            'status' => 'required|in:tersedia,tidak tersedia', // Status wajib diisi dengan nilai tertentu
+            'jadwal_operasional' => 'nullable|json', // Jadwal operasional opsional, harus berupa JSON
+            'kapasitas' => 'required|integer|min:1', // Kapasitas wajib diisi, minimal 1
         ];
     }
 }
