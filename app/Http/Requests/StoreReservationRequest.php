@@ -11,7 +11,7 @@ class StoreReservationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,13 @@ class StoreReservationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'user_id' => 'required|exists:users,id', // Validasi relasi ke tabel users
+            'courts_id' => 'required|exists:courts,id', // Validasi relasi ke tabel courts
+            'nama' => 'required|string|max:255', // Nama pemesan
+            'tanggal' => 'required|date', // Tanggal reservasi
+            'jam_mulai' => 'required|date_format:H:i', // Jam mulai dengan format waktu
+            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai', // Jam selesai harus setelah jam mulai
+            'total_harga' => 'required|integer|min:0', // Total harga harus angka positif
         ];
     }
 }
