@@ -1,4 +1,3 @@
-<!-- filepath: c:\laragon\www\uts_ppwl\resources\views\reservations\edit.blade.php -->
 @extends('layouts.app')
 
 @section('content')
@@ -14,7 +13,9 @@
             <select name="courts_id" id="courts_id" class="form-select @error('courts_id') is-invalid @enderror" required>
                 <option value="">-- Pilih Lapangan --</option>
                 @foreach($courts as $court)
-                    <option value="{{ $court->id }}" {{ old('courts_id', $reservation->courts_id) == $court->id ? 'selected' : '' }}>{{ $court->nama }}</option>
+                    <option value="{{ $court->id }}" data-harga="{{ $court->harga_per_jam }}" {{ old('courts_id', $reservation->courts_id) == $court->id ? 'selected' : '' }}>
+                        {{ $court->nama }} - Rp {{ number_format($court->harga_per_jam, 2, ',', '.') }} / jam
+                    </option>
                 @endforeach
             </select>
             @error('courts_id')
@@ -56,14 +57,50 @@
 
         <div class="mb-3">
             <label for="total_harga" class="form-label">Total Harga</label>
-            <input type="number" name="total_harga" id="total_harga" class="form-control @error('total_harga') is-invalid @enderror" value="{{ old('total_harga', $reservation->total_harga) }}" required>
-            @error('total_harga')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+            <input type="text" id="total_harga" class="form-control" readonly>
         </div>
 
         <button type="submit" class="btn btn-primary">Simpan</button>
         <a href="{{ route('reservations.index') }}" class="btn btn-secondary">Batal</a>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const courtsSelect = document.getElementById('courts_id');
+        const jamMulaiInput = document.getElementById('jam_mulai');
+        const jamSelesaiInput = document.getElementById('jam_selesai');
+        const totalHargaInput = document.getElementById('total_harga');
+
+        function calculateTotalHarga() {
+            const selectedCourt = courtsSelect.options[courtsSelect.selectedIndex];
+            const hargaPerJam = parseFloat(selectedCourt.getAttribute('data-harga')) || 0;
+
+            const jamMulai = jamMulaiInput.value;
+            const jamSelesai = jamSelesaiInput.value;
+
+            if (jamMulai && jamSelesai && hargaPerJam > 0) {
+                const startTime = new Date(`1970-01-01T${jamMulai}:00`);
+                const endTime = new Date(`1970-01-01T${jamSelesai}:00`);
+                const duration = (endTime - startTime) / (1000 * 60 * 60); // Durasi dalam jam
+
+                if (duration > 0) {
+                    const totalHarga = duration * hargaPerJam;
+                    totalHargaInput.value = `Rp ${totalHarga.toLocaleString('id-ID')}`;
+                } else {
+                    totalHargaInput.value = 'Durasi tidak valid';
+                }
+            } else {
+                totalHargaInput.value = '';
+            }
+        }
+
+        courtsSelect.addEventListener('change', calculateTotalHarga);
+        jamMulaiInput.addEventListener('input', calculateTotalHarga);
+        jamSelesaiInput.addEventListener('input', calculateTotalHarga);
+
+        // Hitung total harga saat halaman dimuat
+        calculateTotalHarga();
+    });
+</script>
 @endsection

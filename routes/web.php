@@ -34,5 +34,7 @@ Route::middleware('auth')->group(function () {
         'reservations' => ReservationController::class,
         'courts' => CourtController::class,
     ]);
+    // Route untuk approve reservasi
+Route::patch('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
 });
 
