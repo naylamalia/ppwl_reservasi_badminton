@@ -20,6 +20,7 @@ class Reservation extends Model
         'jam_mulai',
         'jam_selesai',
         'total_harga',
+        'status', // Tambahkan kolom status
     ];
 
     // Relasi dengan model Lapangan

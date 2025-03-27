@@ -41,21 +41,39 @@ class ReservationController extends Controller
      * Menyimpan reservasi baru.
      */
     public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'courts_id' => 'required|exists:courts,id',
-            'nama' => 'required|string|max:255',
-            'tanggal' => 'required|date',
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
-            'total_harga' => 'required|integer|min:0',
-        ]);
+{
+    $request->validate([
+        'courts_id' => 'required|exists:courts,id',
+        'nama' => 'required|string|max:255',
+        'tanggal' => 'required|date',
+        'jam_mulai' => 'required|date_format:H:i',
+        'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
+    ]);
 
-        Reservation::create($request->all());
+    // Ambil data lapangan berdasarkan ID
+    $court = Court::findOrFail($request->courts_id);
 
-        return redirect()->route('reservations.index')->with('success', 'Reservasi berhasil dibuat.');
-    }
+    // Hitung durasi dalam jam
+    $jamMulai = strtotime($request->jam_mulai);
+    $jamSelesai = strtotime($request->jam_selesai);
+    $durasi = ($jamSelesai - $jamMulai) / 3600; // Konversi detik ke jam
 
+    // Hitung total harga
+    $totalHarga = $durasi * $court->harga_per_jam;
+
+    // Simpan data reservasi
+    Reservation::create([
+        'courts_id' => $request->courts_id,
+        'nama' => $request->nama,
+        'tanggal' => $request->tanggal,
+        'jam_mulai' => $request->jam_mulai,
+        'jam_selesai' => $request->jam_selesai,
+        'total_harga' => $totalHarga,
+        'status' => 'pending', // Set status default ke pending
+    ]);
+
+    return redirect()->route('reservations.index')->with('success', 'Reservasi berhasil dibuat.');
+}
     /**
      * Menampilkan detail reservasi.
      */
@@ -77,22 +95,50 @@ class ReservationController extends Controller
     /**
      * Memperbarui data reservasi di database.
      */
-    public function update(Request $request, Reservation $reservation): RedirectResponse
+
+public function update(Request $request, Reservation $reservation): RedirectResponse
+{
+    $request->validate([
+        'courts_id' => 'required|exists:courts,id',
+        'nama' => 'required|string|max:255',
+        'tanggal' => 'required|date',
+        'jam_mulai' => 'required|date_format:H:i',
+        'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
+    ]);
+
+    // Ambil data lapangan berdasarkan ID
+    $court = Court::findOrFail($request->courts_id);
+
+    // Hitung durasi dalam jam
+    $jamMulai = strtotime($request->jam_mulai);
+    $jamSelesai = strtotime($request->jam_selesai);
+    $durasi = ($jamSelesai - $jamMulai) / 3600; // Konversi detik ke jam
+
+    // Hitung total harga
+    $totalHarga = $durasi * $court->harga_per_jam;
+
+    // Perbarui data reservasi
+    $reservation->update([
+        'courts_id' => $request->courts_id,
+        'nama' => $request->nama,
+        'tanggal' => $request->tanggal,
+        'jam_mulai' => $request->jam_mulai,
+        'jam_selesai' => $request->jam_selesai,
+        'total_harga' => $totalHarga,
+    ]);
+
+    return redirect()->route('reservations.index')->with('success', 'Reservasi berhasil diperbarui.');
+}
+    
+    public function approve(Reservation $reservation): RedirectResponse
     {
-        $request->validate([
-            'courts_id' => 'required|exists:courts,id',
-            'nama' => 'required|string|max:255',
-            'tanggal' => 'required|date',
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
-            'total_harga' => 'required|integer|min:0',
-        ]);
-
-        $reservation->update($request->all());
-
-        return redirect()->route('reservations.index')->with('success', 'Reservasi berhasil diperbarui.');
+        if (Auth::user()->hasRole('Admin')) {
+            $reservation->update(['status' => 'approved']);
+            return redirect()->route('reservations.index')->with('success', 'Reservasi berhasil disetujui.');
+        }
+    
+        return redirect()->route('reservations.index')->with('error', 'Anda tidak memiliki izin untuk menyetujui reservasi.');
     }
-
     /**
      * Menghapus reservasi.
      */
